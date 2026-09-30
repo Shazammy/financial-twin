@@ -1,0 +1,23 @@
+/* KBC branding, pulled from live kbc.be on 2026-09-30 (KDL design tokens + Museo Sans).
+   Full token set: css/kdl-design-tokens.css. Fonts live in web/public/fonts (gitignored, KBC license); falls back to Helvetica/Arial. */
+@font-face { font-family: "MuseoSans"; src: url("/fonts/museosans-300.woff2") format("woff2"); font-weight: 300; font-display: swap; }
+@font-face { font-family: "MuseoSans"; src: url("/fonts/museosans-500.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "MuseoSans"; src: url("/fonts/museosans-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+:root {
+  --kbc-navy: rgb(13, 42, 80);          /* primary-main */
+  --kbc-navy-dark: rgb(2, 30, 67);      /* primary-main-600 */
+  --kbc-navy-light: rgb(239, 246, 255); /* primary-main-25 */
+  --kbc-blue: rgb(0, 151, 219);         /* primary-accent (logo circle) */
+  --kbc-blue-dark: rgb(0, 122, 177);    /* primary-accent-600, hover */
+  --kbc-blue-light: rgb(229, 244, 255); /* primary-accent-100 */
+  --kbc-teal: rgb(0, 133, 113);         /* secondary-01 */
+  --kbc-yellow: rgb(233, 193, 0);       /* secondary-02 */
+  --kbc-coral: rgb(238, 112, 121);      /* secondary-03 */
+  --kbc-bg: rgb(242, 242, 242);         /* surface-background */
+  --kbc-success: rgb(91, 162, 21);
+  --kbc-error: rgb(214, 64, 64);
+  --kbc-font: "MuseoSans", "Helvetica Neue", Arial, sans-serif;
+}
+
+body { font-family: var(--kbc-font); font-weight: 300; color: var(--kbc-navy); background: var(--kbc-bg); }

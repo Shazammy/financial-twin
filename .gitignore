@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+# KBC's Museo Sans is licensed to KBC: keep it local, never in the public repo
+web/public/fonts/
+# Local-only agent instructions (git history must not reveal AI tooling)
+CLAUDE.md
+.claude/

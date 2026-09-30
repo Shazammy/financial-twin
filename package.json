@@ -1,0 +1,11 @@
+{
+  "name": "financial-twin",
+  "private": true,
+  "scripts": {
+    "setup": "yarn --cwd api install && yarn --cwd web install && yarn install",
+    "dev": "concurrently -k -n api,web -c blue,green \"yarn --cwd api dev\" \"yarn --cwd web dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
