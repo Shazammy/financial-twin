@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --env-file=.env src/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -17,5 +17,8 @@
     "@types/node": "^22.10.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "resolutions": {
+    "@types/koa": "2.15.2"
   }
 }

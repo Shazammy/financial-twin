@@ -10,3 +10,6 @@ web/public/fonts/
 # Local-only agent instructions (git history must not reveal AI tooling)
 CLAUDE.md
 .claude/
+
+# Launch video output (local only)
+brag-output*/
