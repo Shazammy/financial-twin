@@ -4,7 +4,7 @@ import { bodyParser } from '@koa/bodyparser';
 import { customers, findCustomer, netWorth, type SignalConsent } from './data.js';
 import { login, logout, requireAuth } from './auth.js';
 import { decisionsFor, handleSignal, nudgesFor, parseSignal } from './engine.js';
-import { autopilotStatus, startAutopilot, stopAutopilot } from './autopilot.js';
+import { feedStatus, startFeed } from './signal-feed.js';
 import { announceDeals, dealsFor, joinDeal } from './community.js';
 
 const DEMO_MODE = process.env.DEMO_MODE === 'true';
@@ -82,8 +82,10 @@ router.post('/me/community/announce', async (ctx) => {
   ctx.body = await announceDeals(currentCustomer(ctx));
 });
 
-router.post('/me/community/:dealId/join', (ctx) => {
-  ctx.body = joinDeal(ctx, currentCustomer(ctx), ctx.params.dealId);
+router.post('/me/community/:dealId/join', async (ctx) => {
+  const deal = await joinDeal(currentCustomer(ctx), ctx.params.dealId);
+  if (!deal) return ctx.throw(404, 'This deal is not available to you');
+  ctx.body = deal;
 });
 
 // Demo control room: simulates incoming signals. Disabled unless DEMO_MODE=true.
@@ -94,17 +96,15 @@ router.post('/me/simulate', async (ctx) => {
   ctx.body = await handleSignal(currentCustomer(ctx), signal);
 });
 
-router.get('/me/autopilot', (ctx) => {
-  ctx.body = { ...autopilotStatus(), available: DEMO_MODE };
+// Demo only: the simulated signal feed the twin reacts to.
+router.get('/me/signal-feed', (ctx) => {
+  ctx.body = { ...feedStatus(), available: DEMO_MODE };
 });
 
-router.post('/me/autopilot', (ctx) => {
+router.post('/me/signal-feed/start', (ctx) => {
   if (!DEMO_MODE) ctx.throw(404, 'Not found');
-  const { on } = (ctx.request.body ?? {}) as Record<string, unknown>;
-  if (typeof on !== 'boolean') return ctx.throw(400, 'Send { "on": true } or { "on": false }');
-  if (on) startAutopilot();
-  else stopAutopilot();
-  ctx.body = autopilotStatus();
+  startFeed();
+  ctx.body = feedStatus();
 });
 
 app.use(async (ctx, next) => {

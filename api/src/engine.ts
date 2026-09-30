@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { type Customer, type SignalConsent, TICKERS, customers, holdersByTicker, netWorth } from './data.js';
-import { rewriteAsKate } from './writer.js';
+import { rewriteAsTwin } from './writer.js';
 
 // Illustrative rates for the demo, not real KBC product terms.
 const TERM_ACCOUNT_RATE = 0.024;
@@ -10,7 +10,7 @@ const DCC_FEE = 0.03;
 const CLASSIC_CAR_LOAN_RATE_PCT = 5.9;
 const POOL_CAR_LOAN_RATE_PCT = 4.4;
 
-// Agent policy: when Kate stays quiet.
+// Twin policy: when the twin stays quiet.
 const MIN_YEARLY_IMPACT_EUR = 50;
 const DAILY_MESSAGE_CAP = 6;
 const QUIET_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
@@ -23,7 +23,7 @@ export interface Impact {
 
 export type NudgeKind =
   | 'news' | 'idle-cash' | 'subscription' | 'salary' | 'travel' | 'community'
-  | 'car-search' | 'new-baby' | 'bereavement' | 'moving';
+  | 'car-search' | 'new-baby' | 'bereavement' | 'moving' | 'match';
 
 export type Channel = 'WhatsApp' | 'KBC Mobile';
 
@@ -82,7 +82,8 @@ function holdReason(c: Customer, d: Draft): string | null {
   if (SALES_KINDS.has(d.kind) && d.rankEurPerYear < MIN_YEARLY_IMPACT_EUR) {
     return `gain of ${eur(d.rankEurPerYear)}/year is below the ${eur(MIN_YEARLY_IMPACT_EUR)} threshold`;
   }
-  if (d.kind !== 'bereavement' && sentLastDay(c.id) >= DAILY_MESSAGE_CAP) {
+  // Care messages and confirmations of the customer's own action are never capped.
+  if (d.kind !== 'bereavement' && d.kind !== 'match' && sentLastDay(c.id) >= DAILY_MESSAGE_CAP) {
     return `daily limit of ${DAILY_MESSAGE_CAP} messages reached`;
   }
   return null;
@@ -106,7 +107,7 @@ export async function route(c: Customer, signal: string, drafts: Draft[]): Promi
     const nudge: Nudge = {
       ...rest,
       channel: channel ?? 'WhatsApp',
-      body: await rewriteAsKate(draft.body, firstName),
+      body: await rewriteAsTwin(draft.body, firstName),
       id: randomUUID(),
       createdAt: new Date().toISOString(),
     };

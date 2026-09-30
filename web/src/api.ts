@@ -7,7 +7,7 @@ export interface Nudge {
   id: string;
   kind:
     | 'news' | 'idle-cash' | 'subscription' | 'salary' | 'travel' | 'community'
-    | 'car-search' | 'new-baby' | 'bereavement' | 'moving';
+    | 'car-search' | 'new-baby' | 'bereavement' | 'moving' | 'match';
   title: string;
   body: string;
   impact: Impact | null;
@@ -24,7 +24,7 @@ export interface Decision {
   detail: string;
 }
 
-export interface AutopilotStatus {
+export interface FeedStatus {
   running: boolean;
   step: number;
   total: number;

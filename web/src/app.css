@@ -81,10 +81,8 @@ button.ghost { background: transparent; color: #fff; border: 1px solid rgba(255,
 .channel { font-size: 0.72rem; color: rgb(91, 101, 112); font-style: italic; }
 .signal-group { display: flex; flex-direction: column; gap: 6px; }
 .signal-group > span { font-size: 0.78rem; color: rgb(91, 101, 112); }
-.autopilot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.autopilot button { background: var(--kbc-navy); color: #fff; border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 500; }
-.autopilot button.running { background: var(--kbc-error); }
-.autopilot .status { font-size: 0.85rem; color: rgb(91, 101, 112); }
+.live { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.live .status { font-size: 0.85rem; color: rgb(91, 101, 112); }
 .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--kbc-success); margin-right: 6px; animation: pulse 1.2s infinite; }
 @keyframes pulse { 50% { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
@@ -97,3 +95,5 @@ button.ghost { background: transparent; color: #fff; border: 1px solid rgba(255,
 .agent-log .signal { font-weight: 500; }
 .agent-log .detail { color: rgb(91, 101, 112); }
 .phone-column { position: sticky; top: 16px; align-self: start; }
+.bubble.match { border-left: 3px solid var(--kbc-success); background: rgb(246, 252, 244); }
+.live .replay { background: none; border: 0; padding: 0; color: var(--kbc-blue); text-decoration: underline; font-size: 0.85rem; }

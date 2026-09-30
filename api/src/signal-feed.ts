@@ -1,9 +1,9 @@
 import { findCustomer } from './data.js';
 import { type Signal, handleSignal } from './engine.js';
-import { announceDeals } from './community.js';
+import { announceDeals, joinDeal } from './community.js';
 
 // Simulated live feed for the demo. In production these arrive from event streams.
-type FeedItem = { customerId: string; signal: Signal | { type: 'community' } };
+type FeedItem = { customerId: string; signal: Signal | { type: 'community' } | { type: 'join'; dealId: string } };
 
 const FEED: FeedItem[] = [
   { customerId: 'lotte', signal: { type: 'news', ticker: 'ASML', changePct: -8, headline: 'ASML falls after new chip export restrictions' } },
@@ -15,6 +15,9 @@ const FEED: FeedItem[] = [
   { customerId: 'marie', signal: { type: 'community' } },
   { customerId: 'lotte', signal: { type: 'community' } },
   { customerId: 'youssef', signal: { type: 'community' } },
+  // Simulated customer taps on "Join anonymously"
+  { customerId: 'youssef', signal: { type: 'join', dealId: 'pool:borrower' } },
+  { customerId: 'lotte', signal: { type: 'join', dealId: 'pool:saver' } },
   { customerId: 'lotte', signal: { type: 'location', place: 'Barcelona' } },
   { customerId: 'marie', signal: { type: 'life-event', event: 'moving' } },
   { customerId: 'lotte', signal: { type: 'life-event', event: 'bereavement' } },
@@ -28,26 +31,28 @@ let position = 0;
 async function tick(): Promise<void> {
   const item = FEED[position];
   position++;
-  if (!item || position >= FEED.length) stopAutopilot();
+  if (!item || position >= FEED.length) stopFeed();
   if (!item) return;
   const customer = findCustomer(item.customerId);
   if (!customer) return;
   if (item.signal.type === 'community') await announceDeals(customer);
+  else if (item.signal.type === 'join') await joinDeal(customer, item.signal.dealId);
   else await handleSignal(customer, item.signal);
 }
 
-export function startAutopilot(): void {
+// Starts (or replays) the simulated signal feed. In production the twin listens to live event streams.
+export function startFeed(): void {
   if (timer) return;
   if (position >= FEED.length) position = 0;
-  timer = setInterval(() => void tick().catch((err) => console.error('autopilot', err)), TICK_MS);
+  timer = setInterval(() => void tick().catch((err) => console.error('signal feed', err)), TICK_MS);
   void tick();
 }
 
-export function stopAutopilot(): void {
+function stopFeed(): void {
   if (timer) clearInterval(timer);
   timer = null;
 }
 
-export function autopilotStatus() {
+export function feedStatus() {
   return { running: timer !== null, step: position, total: FEED.length };
 }

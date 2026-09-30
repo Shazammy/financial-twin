@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type AutopilotStatus, type CommunityDeal, type ConsentKey, type Decision, type Me, type Nudge, ApiError, api, eur } from './api';
+import { type CommunityDeal, type ConsentKey, type Decision, type Me, type FeedStatus, type Nudge, ApiError, api, eur } from './api';
 import { Login } from './Login';
 import { Phone } from './Phone';
 
@@ -40,7 +40,7 @@ export function App() {
   const [nudges, setNudges] = useState<Nudge[]>([]);
   const [deals, setDeals] = useState<CommunityDeal[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [autopilot, setAutopilot] = useState<AutopilotStatus | null>(null);
+  const [feed, setFeed] = useState<FeedStatus | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const tokenRef = useRef(token);
@@ -50,18 +50,18 @@ export function App() {
     const t = tokenRef.current;
     if (!t) return;
     try {
-      const [meData, nudgeData, dealData, logData, pilot] = await Promise.all([
+      const [meData, nudgeData, dealData, logData, feedData] = await Promise.all([
         api<Me>('/me', t),
         api<Nudge[]>('/me/nudges', t),
         api<CommunityDeal[]>('/me/community', t),
         api<Decision[]>('/me/agent-log', t),
-        api<AutopilotStatus>('/me/autopilot', t),
+        api<FeedStatus>('/me/signal-feed', t),
       ]);
       setMe(meData);
       setNudges(nudgeData);
       setDeals(dealData);
       setDecisions(logData);
-      setAutopilot(pilot);
+      setFeed(feedData);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) setToken(null);
     }
@@ -74,6 +74,10 @@ export function App() {
       setDecisions([]);
       return;
     }
+    // The twin is live from the moment you log in: in the demo, the simulated signal feed starts once.
+    api<FeedStatus>('/me/signal-feed', token)
+      .then((status) => (status.available && !status.running && status.step === 0 ? api('/me/signal-feed/start', token, { method: 'POST' }) : null))
+      .catch(() => undefined);
     refresh();
     const id = setInterval(refresh, 1500);
     return () => clearInterval(id);
@@ -99,7 +103,7 @@ export function App() {
   const findPools = () => run(() => api('/me/community/announce', token, { method: 'POST' }));
   const join = (dealId: string) => run(() => api(`/me/community/${encodeURIComponent(dealId)}/join`, token, { method: 'POST' }));
   const toggleConsent = (key: ConsentKey) => run(() => api('/me/consents', token, { method: 'PUT', body: { [key]: !me.consents[key] } }));
-  const toggleAutopilot = () => run(() => api('/me/autopilot', token, { method: 'POST', body: { on: !autopilot?.running } }));
+  const replayFeed = () => run(() => api('/me/signal-feed/start', token, { method: 'POST' }));
 
   async function logout() {
     await api('/logout', token, { method: 'POST' }).catch(() => undefined);
@@ -140,7 +144,7 @@ export function App() {
           </div>
 
           <div className="card">
-            <span className="eyebrow">What Kate may use</span>
+            <span className="eyebrow">What your twin may use</span>
             <div className="consents">
               {(Object.keys(CONSENT_LABELS) as ConsentKey[]).map((key) => (
                 <label key={key} className="switch">
@@ -151,43 +155,41 @@ export function App() {
             </div>
           </div>
 
-          {autopilot?.available && (
-            <div className="card">
-              <span className="eyebrow">Kate Autopilot</span>
-              <div className="autopilot">
-                <button type="button" className={autopilot.running ? 'running' : ''} disabled={busy} onClick={toggleAutopilot}>
-                  {autopilot.running ? 'Stop Autopilot' : 'Start Autopilot'}
-                </button>
-                <span className="status">
-                  {autopilot.running && <span className="pulse" aria-hidden="true" />}
-                  {autopilot.running
-                    ? `Kate is watching the live feed · event ${autopilot.step} of ${autopilot.total}`
-                    : 'Kate processes a simulated live feed of signals for all customers, on her own.'}
-                </span>
-              </div>
-              <span className="eyebrow">Kate's decisions for you</span>
-              {decisions.length === 0 ? (
-                <p className="muted">No decisions yet. Start Autopilot or fire a signal.</p>
-              ) : (
-                <ol className="agent-log">
-                  {decisions.map((d) => (
-                    <li key={`${d.at}-${d.detail}`}>
-                      <span className={`outcome ${d.outcome}`}>{d.outcome}</span>
-                      <span>
-                        <span className="signal">{d.signal}</span> · <span className="muted">{time(d.at)}</span>
-                        <br />
-                        <span className="detail">{d.detail}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ol>
+          <div className="card">
+            <span className="eyebrow">Your twin is live</span>
+            <div className="live">
+              <span className="status">
+                {feed?.running && <span className="pulse" aria-hidden="true" />}
+                {feed?.running
+                  ? `Watching your accounts, the markets and life events · signal ${feed.step} of ${feed.total}`
+                  : 'All caught up. Your twin keeps watching and contacts you when something is worth it.'}
+              </span>
+              {feed?.available && !feed.running && (
+                <button type="button" className="replay" disabled={busy} onClick={replayFeed}>Replay signals (demo)</button>
               )}
             </div>
-          )}
+            <span className="eyebrow">Your twin's decisions</span>
+            {decisions.length === 0 ? (
+              <p className="muted">Nothing yet. Your twin only acts when there is something worth it.</p>
+            ) : (
+              <ol className="agent-log">
+                {decisions.map((d) => (
+                  <li key={`${d.at}-${d.detail}`}>
+                    <span className={`outcome ${d.outcome}`}>{d.outcome}</span>
+                    <span>
+                      <span className="signal">{d.signal}</span> · <span className="muted">{time(d.at)}</span>
+                      <br />
+                      <span className="detail">{d.detail}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
 
           {me.demoMode && (
             <div className="card">
-              <span className="eyebrow">Signal control room (manual)</span>
+              <span className="eyebrow">Demo: fire a signal yourself</span>
               <div className="signal-group">
                 <span>Money signals</span>
                 <div className="signals">

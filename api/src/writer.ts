@@ -1,13 +1,13 @@
-// Optional Gemini rewrite of Kate's message. Rules decide; the LLM only writes.
+// Optional Gemini rewrite of the twin's message. Rules decide; the LLM only writes.
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
 const TIMEOUT_MS = 5000;
 
-export async function rewriteAsKate(body: string, firstName: string): Promise<string> {
+export async function rewriteAsTwin(body: string, firstName: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return body;
 
   const prompt = [
-    `You are Kate, the digital assistant of a Belgian bank, writing a short chat message to ${firstName}.`,
+    `You are ${firstName}'s financial twin at a Belgian bank, writing them a short, proactive chat message.`,
     'Rewrite the message below in at most 2 friendly sentences.',
     'Keep every number and euro amount exactly as given. Do not add facts.',
     'Never tell the customer to buy or sell an investment; inform only.',

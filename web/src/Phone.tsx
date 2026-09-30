@@ -15,7 +15,7 @@ function Bubble({ nudge, joined, onJoin }: { nudge: Nudge; joined: boolean; onJo
   const time = new Date(nudge.createdAt).toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className={`bubble ${nudge.kind === 'bereavement' ? 'care' : ''}`}>
+    <div className={`bubble ${nudge.kind === 'bereavement' ? 'care' : nudge.kind === 'match' ? 'match' : ''}`}>
       {nudge.channel !== 'WhatsApp' && <span className="channel">Sent in {nudge.channel}, not WhatsApp</span>}
       <div className="bubble-head">
         <strong>{nudge.title}</strong>
@@ -45,33 +45,33 @@ function Bubble({ nudge, joined, onJoin }: { nudge: Nudge; joined: boolean; onJo
 }
 
 export function Phone({ nudges, joinedDeals, onJoin }: { nudges: Nudge[]; joinedDeals: Set<string>; onJoin: (dealId: string) => void }) {
-  const yearlyFound = nudges
-    .filter((n) => n.impact?.period === 'per year')
-    .reduce((sum, n) => sum + (n.impact?.eur ?? 0), 0);
+  // The same saving can reach the customer twice (e.g. car search and borrower pool); count it once.
+  const uniqueImpacts = new Map(nudges.flatMap((n) => (n.impact ? [[`${Math.round(n.impact.eur)}|${n.impact.period}`, n.impact] as const] : [])));
+  const sumFor = (period: string) => [...uniqueImpacts.values()].filter((i) => i.period === period).reduce((sum, i) => sum + i.eur, 0);
+  const yearlyFound = sumFor('per year');
+
   const chatRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' });
   }, [nudges.length]);
 
-  const oneOffFound = nudges
-    .filter((n) => n.impact?.period === 'one-off')
-    .reduce((sum, n) => sum + (n.impact?.eur ?? 0), 0);
+  const oneOffFound = sumFor('one-off');
 
   return (
     <div className="phone" aria-label="Customer phone">
       <div className="phone-header">
         <img src="/kbc-logo.svg" alt="" width={32} height={32} />
         <div>
-          <strong>Kate</strong>
+          <strong>Your Financial Twin</strong>
           <span>KBC · via WhatsApp</span>
         </div>
       </div>
       <div className="found-bar">
-        Kate found <strong>{eur(yearlyFound)}/year</strong>
+        Your twin found <strong>{eur(yearlyFound)}/year</strong>
         {oneOffFound > 0 && <> + <strong>{eur(oneOffFound)}</strong> one-off</>} for you
       </div>
       <div className="chat" ref={chatRef}>
-        {nudges.length === 0 && <p className="chat-empty">No messages yet. Fire a signal from the control room.</p>}
+        {nudges.length === 0 && <p className="chat-empty">No messages yet. Your twin contacts you when something is worth it.</p>}
         {nudges.map((n) => (
           <Bubble key={n.id} nudge={n} joined={!!n.action.dealId && joinedDeals.has(n.action.dealId)} onJoin={onJoin} />
         ))}

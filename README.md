@@ -1,6 +1,6 @@
 # Financial Twin
 
-**Samen staan we sterker.** Kate gives every customer a financial twin. The twin spots your chances alone, and together.
+**Samen staan we sterker.** Every customer gets a financial twin that contacts them proactively. The twin spots your chances alone, and together.
 
 Built at the Tectonic Hackathon 2026 for the KBC challenge: understand what customers need and respond at the right moment, for 2.3 million customers.
 
@@ -13,7 +13,7 @@ Every customer gets a **financial twin**: a profile of their goals, life stage, 
    - **Group purchase:** neighbours with the same goal (heat pump) get a volume discount and a green-loan rate.
    - **Saver × borrower:** savers earn more than on a savings account, borrowers pay less than on a classic loan. KBC stays in the middle and carries the credit risk.
 
-Messages arrive in a WhatsApp-style chat from Kate. Only tips and alerts are sent there; invoices and offers open in KBC Mobile.
+Messages arrive in a WhatsApp-style chat from your twin. Only tips and alerts are sent there; invoices and offers open in KBC Mobile.
 
 ## Run it
 
@@ -27,17 +27,17 @@ yarn dev                       # api on :4100, web on http://localhost:5173
 
 Log in as one of the synthetic customers with your `DEMO_PIN`.
 
-### Kate Autopilot (the proactive agent)
+### Your twin is live (the proactive part)
 
-Press **Start Autopilot**. Kate processes a simulated live feed of signals for all customers on her own, one event every 5 seconds, and messages arrive without any clicks. **Kate's decisions** shows every decision for the logged-in customer:
+After login your twin is live: it reacts to a feed of incoming signals for all customers, one every 5 seconds, and messages arrive without any clicks. In the demo this feed is simulated (`api/src/signal-feed.ts`); in production the twin listens to KBC's live event streams (transactions, market news, national register notices, app events). **Your twin's decisions** shows every decision for the logged-in customer:
 
 - **SEND**: the message and its € impact, and the channel it went out on
-- **HOLD**: why Kate stayed quiet: below €50/year, no consent, daily limit of 6 messages, or the 30-day quiet period after a death in the family
-- **OBSERVE**: what Kate saw, e.g. how many twins the news index matched
+- **HOLD**: why the twin stayed quiet: below €50/year, no consent, daily limit of 6 messages, or the 30-day quiet period after a death in the family
+- **OBSERVE**: what the twin saw, e.g. how many twins the news index matched
 
 ### Life events
 
-| Event | Signal Kate sees | What Kate does |
+| Event | Signal the twin sees | What the twin does |
 |---|---|---|
 | Looking for a car | Car loan simulator used in KBC Mobile (never browsing on other sites) | Pool car loan rate plus a car insurance quote |
 | New baby | Child benefit (Groeipakket) payments, baby store purchases | Hospitalisation insurance reminder and a savings plan |
@@ -54,11 +54,11 @@ The same signals can be fired by hand:
 | News: ASML −8% | Fans out through a ticker index over 20,000 anonymous twins; only holders get a message |
 | Salary +15% | Suggests saving half the raise, shows the value after 10 years |
 | Location: Barcelona airport | Card-abroad tip and travel insurance check |
-| Find people to pool with | Group purchase and saver × borrower pools |
+| Find people to pool with | Group purchase and saver × borrower pools; when both sides of a pool join, both get **Match found** |
 
 Turn off a consent switch and the matching signals are skipped. Marie has community matching off, so she gets no pools.
 
-Optional: set `GEMINI_API_KEY` in `api/.env` to let Gemini rewrite messages in Kate's voice. Rules decide what is sent; the LLM only writes it. Without a key the templates are used.
+Optional: set `GEMINI_API_KEY` in `api/.env` to let Gemini rewrite messages in the twin's voice. Rules decide what is sent; the LLM only writes it. Without a key the templates are used.
 
 ## How it scales to 2.3 million customers
 
@@ -77,7 +77,7 @@ Optional: set `GEMINI_API_KEY` in `api/.env` to let Gemini rewrite messages in K
 ## Structure
 
 - `api/`: Koa + TypeScript. `data.ts` (synthetic customers and twin population), `engine.ts` (signals and rules), `community.ts` (pools), `auth.ts`, `writer.ts` (optional Gemini)
-- `web/`: Vite + React + TypeScript. Twin card, consent switches, control room and Kate chat
+- `web/`: Vite + React + TypeScript. Twin card, consent switches, live decisions, demo signal buttons and the twin chat
 
 ## Unfinished
 

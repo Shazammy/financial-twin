@@ -1,6 +1,6 @@
 import type { Context } from 'koa';
-import { type Customer, population } from './data.js';
-import { type Impact, logDecision, route, totalInterest } from './engine.js';
+import { type Customer, findCustomer, population } from './data.js';
+import { type Draft, type Impact, logDecision, route, totalInterest } from './engine.js';
 
 // Illustrative terms for the demo, not real KBC or installer offers.
 const HEAT_PUMP = { minGroupSize: 10, groupDiscountPct: 15, typicalCostEur: 14000, greenLoanRatePct: 1.9, standardLoanRatePct: 4.5 };
@@ -111,11 +111,78 @@ export async function announceDeals(customer: Customer) {
   );
 }
 
-export function joinDeal(ctx: Context, customer: Customer, id: string): CommunityDeal {
+const eurFmt = (n: number) => `€${Math.round(n).toLocaleString('nl-BE')}`;
+
+function matchMessage(deal: CommunityDeal, c: Customer): Draft | null {
+  if (deal.kind === 'group-purchase') {
+    const size = deal.othersInterested + 1;
+    return {
+      kind: 'match',
+      title: 'Match found: your group is complete',
+      body: `${size} households in ${c.neighbourhood} joined the heat pump group purchase. The installer's group quote with ${HEAT_PUMP.groupDiscountPct}% off is on its way, and the green loan at ${HEAT_PUMP.greenLoanRatePct}% is reserved for you. Names stay private.`,
+      impact: deal.impact,
+      why: [`Group size ${size}, minimum ${HEAT_PUMP.minGroupSize}`, 'You joined anonymously', 'Signal: community'],
+      action: { label: 'See the group quote in KBC Mobile', kind: 'open-app' },
+      rankEurPerYear: 0,
+    };
+  }
+  if (deal.kind === 'saver') {
+    const amount = Math.floor((c.currentAccountEur - c.monthlySpendEur * 3) / 1000) * 1000;
+    return {
+      kind: 'match',
+      title: 'Match found: your savings are at work',
+      body: `Your ${eurFmt(amount)} now funds an anonymous twin's car loan through the KBC pool. You earn ${POOL.saverPoolRatePct}% instead of ${POOL.savingsRatePct}%. KBC carries the risk, so your money is as safe as on a term account.`,
+      impact: deal.impact,
+      why: ['Matched with a borrower twin who joined the pool', 'Neither side sees the other\'s name', 'KBC stays in the middle'],
+      action: { label: 'See your pool deposit in KBC Mobile', kind: 'open-app' },
+      rankEurPerYear: 0,
+    };
+  }
+  if (!c.loanNeed) return null;
+  return {
+    kind: 'match',
+    title: 'Match found: your car loan is funded',
+    body: `Saving twins funded your ${eurFmt(c.loanNeed.amountEur)} ${c.loanNeed.purpose} loan through the KBC pool at ${POOL.borrowerPoolRatePct}% instead of ${POOL.classicLoanRatePct}%. KBC stays your lender. You can sign the contract in KBC Mobile.`,
+    impact: deal.impact,
+    why: ['Matched with saver twins who joined the pool', 'Neither side sees the other\'s name', 'KBC stays your lender'],
+    action: { label: 'Sign your car loan in KBC Mobile', kind: 'open-app' },
+    rankEurPerYear: 0,
+  };
+}
+
+const COUNTERPART: Record<string, string> = { 'pool:saver': 'pool:borrower', 'pool:borrower': 'pool:saver' };
+
+async function confirmMatch(customer: Customer, deal: CommunityDeal): Promise<void> {
+  const draft = matchMessage(deal, customer);
+  if (draft) await route(customer, 'Match found', [draft]);
+}
+
+// Joining is the customer's own action. A group is complete at its minimum size; a saver and a
+// borrower match as soon as both sides have joined, and then both get a message.
+export async function joinDeal(customer: Customer, id: string): Promise<CommunityDeal | null> {
   const deal = dealsFor(customer).find((d) => d.id === id);
-  if (!deal) return ctx.throw(404, 'This deal is not available to you');
+  if (!deal) return null;
+  if (deal.joined) return deal;
   const joined = joinedBy.get(id) ?? new Set<string>();
   joined.add(customer.id);
   joinedBy.set(id, joined);
-  return { ...deal, joined: true };
+  logDecision(customer.id, 'Customer action', 'OBSERVE', `You joined "${deal.title}" anonymously`);
+
+  const joinedDeal = { ...deal, joined: true };
+  if (deal.kind === 'group-purchase') {
+    if (deal.othersInterested + 1 >= HEAT_PUMP.minGroupSize) await confirmMatch(customer, joinedDeal);
+    return joinedDeal;
+  }
+
+  const otherSide = [...(joinedBy.get(COUNTERPART[id]) ?? [])].map(findCustomer).filter((c): c is Customer => !!c);
+  if (otherSide.length === 0) {
+    logDecision(customer.id, 'Match found', 'HOLD', 'Waiting for a twin on the other side of the pool');
+    return joinedDeal;
+  }
+  await confirmMatch(customer, joinedDeal);
+  for (const other of otherSide) {
+    const theirDeal = dealsFor(other).find((d) => d.id === COUNTERPART[id]);
+    if (theirDeal) await confirmMatch(other, { ...theirDeal, joined: true });
+  }
+  return joinedDeal;
 }
