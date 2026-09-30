@@ -50,7 +50,7 @@ export function Login({ onLogin }: { onLogin: (token: string) => void }) {
         </div>
         <label className="field">
           <span>PIN</span>
-          <input id="pin" type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value)} />
+          <input id="pin" type="password" inputMode="numeric" autoComplete="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other" value={pin} onChange={(e) => setPin(e.target.value)} />
         </label>
         {error && <p className="error">{error}</p>}
         <button type="submit" className="primary" disabled={!customerId || !pin}>Log in</button>

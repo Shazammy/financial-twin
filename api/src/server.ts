@@ -1,6 +1,9 @@
 import Koa from 'koa';
 import Router from '@koa/router';
 import { bodyParser } from '@koa/bodyparser';
+import serve from 'koa-static';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { customers, findCustomer, netWorth, type SignalConsent } from './data.js';
 import { login, logout, requireAuth } from './auth.js';
 import { decisionsFor, handleSignal, nudgesFor, parseSignal } from './engine.js';
@@ -121,5 +124,19 @@ app.use(bodyParser());
 app.use(router.routes());
 app.use(router.allowedMethods());
 
+// In production the API also serves the built web app (single service on Render).
+const webDist = resolve(import.meta.dirname, '../../web/dist');
+if (existsSync(webDist)) {
+  const indexHtml = readFileSync(resolve(webDist, 'index.html'));
+  app.use(serve(webDist));
+  app.use(async (ctx) => {
+    if (ctx.method === 'GET' && !ctx.path.startsWith('/api')) {
+      ctx.type = 'html';
+      ctx.body = indexHtml;
+    }
+  });
+}
+
 const port = Number(process.env.PORT ?? 4100);
-app.listen(port, '127.0.0.1', () => console.log(`API on http://127.0.0.1:${port} (demo mode: ${DEMO_MODE})`));
+const host = process.env.HOST ?? '127.0.0.1';
+app.listen(port, host, () => console.log(`API on http://${host}:${port} (demo mode: ${DEMO_MODE})`));

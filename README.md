@@ -60,6 +60,10 @@ Turn off a consent switch and the matching signals are skipped. Marie has commun
 
 Optional: set `GEMINI_API_KEY` in `api/.env` to let Gemini rewrite messages in the twin's voice. Rules decide what is sent; the LLM only writes it. Without a key the templates are used.
 
+## Deploy (Render, free)
+
+`render.yaml` describes one free web service: it builds the web app and the API serves it. Create it from the repo as a Render Blueprint and fill in `DEMO_PIN` (and optionally `GEMINI_API_KEY`). The free plan sleeps when idle, so the first visit can take up to a minute.
+
 ## How it scales to 2.3 million customers
 
 - Events fan out through indexes (news about ASML reaches only twins holding ASML); nobody is polled.

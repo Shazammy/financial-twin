@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: financial-twin
+    runtime: node
+    plan: free
+    buildCommand: yarn --cwd api install && yarn --cwd web install && yarn --cwd web build
+    startCommand: yarn --cwd api start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: HOST
+        value: 0.0.0.0
+      - key: DEMO_MODE
+        value: "true"
+      - key: DEMO_PIN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
