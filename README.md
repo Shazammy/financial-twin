@@ -22,12 +22,12 @@ Messages arrive in a WhatsApp-style chat from your twin. Only tips and alerts ar
 Requires Node 22+ and yarn 1.
 
 ```bash
-cp api/.env.example api/.env   # then set DEMO_PIN to a PIN of your choice
+cp api/.env.example api/.env
 yarn setup                     # installs api, web and root dependencies
 yarn dev                       # api on :4100, web on http://localhost:5173
 ```
 
-Log in as one of the synthetic customers with your `DEMO_PIN`.
+Pick one of the synthetic customers to log in (no password: demo only).
 
 ### Your twin is live (the proactive part)
 
@@ -64,7 +64,7 @@ Optional: set `GEMINI_API_KEY` in `api/.env` to let Gemini rewrite messages in t
 
 ## Deploy (Render, free)
 
-`render.yaml` describes one free web service: it builds the web app and the API serves it. Create it from the repo as a Render Blueprint and fill in `DEMO_PIN` (and optionally `GEMINI_API_KEY`). The free plan sleeps when idle, so the first visit can take up to a minute.
+`render.yaml` describes one free web service: it builds the web app and the API serves it. Create it from the repo as a Render Blueprint (optionally fill in `GEMINI_API_KEY`). The free plan sleeps when idle, so the first visit can take up to a minute.
 
 ## How it scales to 2.3 million customers
 
@@ -74,7 +74,7 @@ Optional: set `GEMINI_API_KEY` in `api/.env` to let Gemini rewrite messages in t
 
 ## Security
 
-- Session tokens are random 256-bit values, PINs are salted scrypt hashes with a lockout after 5 failed attempts.
+- Demo login without a password (synthetic customers only); session tokens are random 256-bit values that expire after 2 hours.
 - Every `/api/me/*` route takes the customer from the session, never from the URL or body (no IDOR).
 - Deals can only be joined by customers they were offered to.
 - The signal control room only exists when `DEMO_MODE=true`.

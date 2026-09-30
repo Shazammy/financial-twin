@@ -32,9 +32,9 @@ router.get('/demo-customers', (ctx) => {
 });
 
 router.post('/login', (ctx) => {
-  const { customerId, pin } = (ctx.request.body ?? {}) as Record<string, unknown>;
-  const token = login(customerId, pin);
-  if (!token) ctx.throw(401, 'Wrong customer or PIN');
+  const { customerId } = (ctx.request.body ?? {}) as Record<string, unknown>;
+  const token = login(customerId);
+  if (!token) ctx.throw(401, 'Unknown customer');
   ctx.body = { token };
 });
 

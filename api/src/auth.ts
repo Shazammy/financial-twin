@@ -1,10 +1,8 @@
-import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import type { Context, Next } from 'koa';
-import { customers } from './data.js';
+import { findCustomer } from './data.js';
 
 const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_MS = 60 * 1000;
 
 interface Session {
   customerId: string;
@@ -12,36 +10,10 @@ interface Session {
 }
 
 const sessions = new Map<string, Session>();
-const failedAttempts = new Map<string, { count: number; lockedUntil: number }>();
 
-// Demo PIN comes from the environment; each customer gets its own salted hash at startup.
-const demoPin = process.env.DEMO_PIN ?? '';
-const pinHashes = new Map(
-  customers.map((c) => {
-    const salt = randomBytes(16);
-    return [c.id, { salt, hash: scryptSync(demoPin, salt, 32) }];
-  }),
-);
-
-export function login(customerId: unknown, pin: unknown): string | null {
-  if (typeof customerId !== 'string' || typeof pin !== 'string' || demoPin === '') return null;
-  const stored = pinHashes.get(customerId);
-  if (!stored) return null;
-
-  const attempts = failedAttempts.get(customerId);
-  if (attempts && attempts.lockedUntil > Date.now()) return null;
-
-  const candidate = scryptSync(pin, stored.salt, 32);
-  if (!timingSafeEqual(candidate, stored.hash)) {
-    const count = (attempts?.count ?? 0) + 1;
-    failedAttempts.set(customerId, {
-      count: count >= MAX_FAILED_ATTEMPTS ? 0 : count,
-      lockedUntil: count >= MAX_FAILED_ATTEMPTS ? Date.now() + LOCKOUT_MS : 0,
-    });
-    return null;
-  }
-
-  failedAttempts.delete(customerId);
+// Demo login: pick one of the synthetic customers. The session token still scopes every /api/me route.
+export function login(customerId: unknown): string | null {
+  if (typeof customerId !== 'string' || !findCustomer(customerId)) return null;
   const token = randomBytes(32).toString('hex');
   sessions.set(token, { customerId, expiresAt: Date.now() + SESSION_TTL_MS });
   return token;
