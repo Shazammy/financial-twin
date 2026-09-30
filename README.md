@@ -2,6 +2,8 @@
 
 **Samen staan we sterker.** Every customer gets a financial twin that contacts them proactively. The twin spots your chances alone, and together.
 
+**Live demo:** https://financial-twin-xrj5.onrender.com/ (free plan: the first visit can take up to a minute to wake up)
+
 Built at the Tectonic Hackathon 2026 for the KBC challenge: understand what customers need and respond at the right moment, for 2.3 million customers.
 
 ## What it does
